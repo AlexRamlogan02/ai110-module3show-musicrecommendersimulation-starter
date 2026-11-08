@@ -17,17 +17,35 @@ Replace this paragraph with your own summary of what your version does.
 
 ## How The System Works
 
-Explain your design in plain language.
+The content-based recommender compares each song's attributes with a user's
+taste profile. The functional scoring and ranking rules below are implemented;
+the object-oriented recommender is still planned.
 
-Some prompts to answer:
+Each `Song` stores an ID, title, artist, genre, mood, energy, tempo in beats
+per minute, valence, danceability, and acousticness. The initial scoring rule
+uses genre, mood, and energy. The remaining audio attributes could be used in a
+future version.
 
-- What features does each `Song` use in your system
-  - For example: genre, mood, energy, tempo
-- What information does your `UserProfile` store
-- How does your `Recommender` compute a score for each song
-- How do you choose which songs to recommend
+The `UserProfile` stores a favorite genre, favorite mood, target energy, and
+whether the user likes acoustic music. The initial scoring rule does not yet
+use the acoustic preference.
 
-You can include a simple diagram or bullet list if helpful.
+**Scoring rule (one song):**
+
+- Add 2 points if the song's genre matches the user's favorite genre.
+- Add 2 points if the song's mood matches the user's favorite mood.
+- Add an energy closeness score of `1 - abs(song.energy - user.target_energy)`.
+  Assuming both energy values are between 0 and 1, an exact match adds 1 point
+  and the largest possible difference adds 0 points.
+
+Both energy values must be numeric and between 0 and 1; invalid values raise an
+error. The total score ranges from 0 to 5. For example, a song matching both genre and
+mood with energy 0.8 for a user targeting 0.7 scores `2 + 2 + 0.9 = 4.9`.
+Genre and mood therefore each have twice the maximum weight of energy.
+
+**Ranking rule (a list of songs):** Score every song using the same rule, sort
+the songs from highest to lowest score, and recommend the first `k` songs. If
+scores tie, keep the songs in their original order.
 
 ---
 
@@ -68,15 +86,26 @@ You can add more tests in `tests/test_recommender.py`.
 
 ## Sample Recommendation Output
 
-Paste a sample of your recommender's output here as a text block so a reader can see what it produces:
+``` bash
+Loaded 20 songs.
 
-```
-# e.g.:
-# User profile: genre=indie, mood=chill, energy=low
-# Recommendations:
-#   1. ...
-#   2. ...
-#   3. ...
+Top recommendations:
+
+Sunrise City - Score: 4.98
+Because: Genre matches: pop; Mood matches: happy; Energy 0.82 compared with target 0.80 (closeness: 0.98)
+
+Golden Hour Walk - Score: 4.90
+Because: Genre matches: pop; Mood matches: happy; Energy 0.70 compared with target 0.80 (closeness: 0.90)
+
+Rooftop Lights - Score: 2.96
+Because: Mood matches: happy; Energy 0.76 compared with target 0.80 (closeness: 0.96)
+
+Window Seat - Score: 2.93
+Because: Mood matches: happy; Energy 0.73 compared with target 0.80 (closeness: 0.93)
+
+Running Wild - Score: 2.90
+Because: Genre matches: pop; Energy 0.90 compared with target 0.80 (closeness: 0.90)
+
 ```
 
 **Screenshot or video** *(optional)*: <!-- Insert a screenshot or demo video link here -->
@@ -117,6 +146,3 @@ Write 1 to 2 paragraphs here about what you learned:
 
 - about how recommenders turn data into predictions
 - about where bias or unfairness could show up in systems like this
-
-
-
