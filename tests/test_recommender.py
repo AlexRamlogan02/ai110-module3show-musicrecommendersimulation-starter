@@ -75,10 +75,10 @@ def test_load_songs_raises_for_missing_file(tmp_path):
     ("song", "expected", "reason_count"),
     [
         ({"genre": "pop", "mood": "happy", "energy": 0.7}, 5.0, 3),
-        ({"genre": "pop", "mood": "happy", "energy": 0.8}, 4.9, 3),
+        ({"genre": "pop", "mood": "happy", "energy": 0.8}, 4.8, 3),
         ({"genre": "pop", "mood": "chill", "energy": 0.7}, 3.0, 2),
         ({"genre": "lofi", "mood": "happy", "energy": 0.7}, 3.0, 2),
-        ({"genre": "lofi", "mood": "chill", "energy": 0.2}, 0.5, 1),
+        ({"genre": "lofi", "mood": "chill", "energy": 0.2}, 0.0, 1),
     ],
 )
 def test_score_song_matches_documented_rule(song, expected, reason_count):
@@ -99,6 +99,20 @@ def test_score_song_extreme_energy_difference():
     assert "closeness: 0.00" in reasons[0]
 
 
+@pytest.mark.parametrize(
+    ("song_energy", "expected_closeness"),
+    [(0.0, 1.0), (0.25, 0.5), (0.5, 0.0), (0.75, 0.0)],
+)
+def test_score_song_energy_sensitivity_and_floor(song_energy, expected_closeness):
+    user = {"genre": "pop", "mood": "happy", "energy": 0.0}
+    song = {"genre": "lofi", "mood": "chill", "energy": song_energy}
+
+    score, reasons = score_song(user, song)
+
+    assert score == pytest.approx(expected_closeness)
+    assert f"closeness: {expected_closeness:.2f}" in reasons[0]
+
+
 @pytest.mark.parametrize("value", [-0.1, 1.1, float("nan"), float("inf"), "0.5", True])
 @pytest.mark.parametrize("source", ["user", "song"])
 def test_score_song_rejects_invalid_energy(value, source):
@@ -116,7 +130,7 @@ def test_score_song_with_loaded_song():
 
     score, reasons = score_song({"genre": "pop", "mood": "happy", "energy": 0.8}, song)
 
-    assert score == pytest.approx(4.98)
+    assert score == pytest.approx(4.96)
     assert len(reasons) == 3
 
 
@@ -139,6 +153,42 @@ def test_recommend_songs_ranks_limits_and_preserves_ties():
     assert [score for _, score, _ in results] == [5.0, 5.0]
     assert all("Genre matches: pop" in explanation for _, _, explanation in results)
     assert recommend_songs(user, songs, k=0) == []
+
+
+@pytest.mark.parametrize(
+    ("user_prefs", "expected_title", "expected_score"),
+    [
+        pytest.param(
+            {"genre": "pop", "mood": "happy", "energy": 0.82},
+            "Sunrise City", 5.0, id="exact-match",
+        ),
+        pytest.param(
+            {"genre": "lofi", "mood": "chill", "energy": 0.0},
+            "Quiet Window", 4.36, id="minimum-energy",
+        ),
+        pytest.param(
+            {"genre": "rock", "mood": "intense", "energy": 1.0},
+            "Storm Runner", 4.82, id="maximum-energy",
+        ),
+        pytest.param(
+            {"genre": "classical", "mood": "chill", "energy": 0.28},
+            "Spacewalk Thoughts", 3.0, id="unknown-genre",
+        ),
+        pytest.param(
+            {"genre": "classical", "mood": "melancholic", "energy": 0.4},
+            "Focus Flow", 1.0, id="unknown-genre-and-mood",
+        ),
+    ],
+)
+def test_recommend_songs_with_varied_user_preferences(user_prefs, expected_title, expected_score):
+    csv_path = Path(__file__).resolve().parents[1] / "data" / "songs.csv"
+    recommendations = recommend_songs(user_prefs, load_songs(str(csv_path)), k=1)
+
+    assert len(recommendations) == 1
+    song, score, explanation = recommendations[0]
+    assert song["title"] == expected_title
+    assert score == pytest.approx(expected_score)
+    assert explanation
 
 
 def make_small_recommender() -> Recommender:

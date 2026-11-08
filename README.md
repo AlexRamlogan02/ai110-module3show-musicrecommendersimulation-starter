@@ -2,16 +2,10 @@
 
 ## Project Summary
 
-In this project you will build and explain a small music recommender system.
-
-Your goal is to:
-
-- Represent songs and a user "taste profile" as data
-- Design a scoring rule that turns that data into recommendations
-- Evaluate what your system gets right and wrong
-- Reflect on how this mirrors real world AI recommenders
-
-Replace this paragraph with your own summary of what your version does.
+This classroom simulation loads a catalog of 20 example songs and recommends
+music using a user's preferred genre, mood, and energy. It scores and ranks
+each song, explains the score, and demonstrates the results for five profiles,
+including preferences that do not match the catalog.
 
 ---
 
@@ -34,13 +28,14 @@ use the acoustic preference.
 
 - Add 2 points if the song's genre matches the user's favorite genre.
 - Add 2 points if the song's mood matches the user's favorite mood.
-- Add an energy closeness score of `1 - abs(song.energy - user.target_energy)`.
-  Assuming both energy values are between 0 and 1, an exact match adds 1 point
-  and the largest possible difference adds 0 points.
+- Add an energy closeness score of
+  `max(0, 1 - 2 * abs(song.energy - user.target_energy))`. An exact match
+  adds 1 point; a difference of 0.5 or greater adds 0 points. The factor of 2
+  makes closeness decrease twice as quickly as in the original rule.
 
 Both energy values must be numeric and between 0 and 1; invalid values raise an
 error. The total score ranges from 0 to 5. For example, a song matching both genre and
-mood with energy 0.8 for a user targeting 0.7 scores `2 + 2 + 0.9 = 4.9`.
+mood with energy 0.8 for a user targeting 0.7 scores `2 + 2 + 0.8 = 4.8`.
 Genre and mood therefore each have twice the maximum weight of energy.
 
 **Ranking rule (a list of songs):** Score every song using the same rule, sort
@@ -66,7 +61,9 @@ scores tie, keep the songs in their original order.
 pip install -r requirements.txt
 ```
 
-3. Run the app:
+3. Run the app from the repository root. It displays the top five
+   recommendations for each of five sample profiles, including energy
+   extremes and preferences with no matching genre or mood:
 
 ```bash
 python -m src.main
@@ -74,10 +71,10 @@ python -m src.main
 
 ### Running Tests
 
-Run the starter tests with:
+Run the tests from the repository root with:
 
 ```bash
-pytest
+python -m pytest
 ```
 
 You can add more tests in `tests/test_recommender.py`.
@@ -86,26 +83,17 @@ You can add more tests in `tests/test_recommender.py`.
 
 ## Sample Recommendation Output
 
-``` bash
+Example excerpt for the first profile:
+
+```text
 Loaded 20 songs.
 
+Profile 1: genre=pop, mood=happy, energy=0.82
 Top recommendations:
 
-Sunrise City - Score: 4.98
-Because: Genre matches: pop; Mood matches: happy; Energy 0.82 compared with target 0.80 (closeness: 0.98)
-
-Golden Hour Walk - Score: 4.90
-Because: Genre matches: pop; Mood matches: happy; Energy 0.70 compared with target 0.80 (closeness: 0.90)
-
-Rooftop Lights - Score: 2.96
-Because: Mood matches: happy; Energy 0.76 compared with target 0.80 (closeness: 0.96)
-
-Window Seat - Score: 2.93
-Because: Mood matches: happy; Energy 0.73 compared with target 0.80 (closeness: 0.93)
-
-Running Wild - Score: 2.90
-Because: Genre matches: pop; Energy 0.90 compared with target 0.80 (closeness: 0.90)
-
+Sunrise City - Score: 5.00
+Because: Genre matches: pop; Mood matches: happy; Energy 0.82 compared with target 0.82 (closeness: 1.00)
+...
 ```
 
 **Screenshot or video** *(optional)*: <!-- Insert a screenshot or demo video link here -->
@@ -114,35 +102,151 @@ Because: Genre matches: pop; Energy 0.90 compared with target 0.80 (closeness: 0
 
 ## Experiments You Tried
 
-Use this section to document the experiments you ran. For example:
+The following output is from the original closeness rule, before increasing
+energy sensitivity. The current rule can produce different scores and ties.
 
-- What happened when you changed the weight on genre from 2.0 to 0.5
-- What happened when you added tempo or valence to the score
-- How did your system behave for different types of users
+``` bash
+
+Profile 1: genre=pop, mood=happy, energy=0.82
+Top recommendations:
+
+Sunrise City - Score: 5.00
+Because: Genre matches: pop; Mood matches: happy; Energy 0.82 compared with target 0.82 (closeness: 1.00)
+
+Golden Hour Walk - Score: 4.88
+Because: Genre matches: pop; Mood matches: happy; Energy 0.70 compared with target 0.82 (closeness: 0.88)
+
+Rooftop Lights - Score: 2.94
+Because: Mood matches: happy; Energy 0.76 compared with target 0.82 (closeness: 0.94)
+
+Running Wild - Score: 2.92
+Because: Genre matches: pop; Energy 0.90 compared with target 0.82 (closeness: 0.92)
+
+Window Seat - Score: 2.91
+Because: Mood matches: happy; Energy 0.73 compared with target 0.82 (closeness: 0.91)
+
+
+Profile 2: genre=lofi, mood=chill, energy=0.0
+Top recommendations:
+
+Quiet Window - Score: 4.68
+Because: Genre matches: lofi; Mood matches: chill; Energy 0.32 compared with target 0.00 (closeness: 0.68)
+
+Library Rain - Score: 4.65
+Because: Genre matches: lofi; Mood matches: chill; Energy 0.35 compared with target 0.00 (closeness: 0.65)
+
+Midnight Coding - Score: 4.58
+Because: Genre matches: lofi; Mood matches: chill; Energy 0.42 compared with target 0.00 (closeness: 0.58)
+
+Distant Planets - Score: 2.76
+Because: Mood matches: chill; Energy 0.24 compared with target 0.00 (closeness: 0.76)
+
+Spacewalk Thoughts - Score: 2.72
+Because: Mood matches: chill; Energy 0.28 compared with target 0.00 (closeness: 0.72)
+
+
+Profile 3: genre=rock, mood=intense, energy=1.0
+Top recommendations:
+
+Storm Runner - Score: 4.91
+Because: Genre matches: rock; Mood matches: intense; Energy 0.91 compared with target 1.00 (closeness: 0.91)
+
+Electric Horizon - Score: 4.88
+Because: Genre matches: rock; Mood matches: intense; Energy 0.88 compared with target 1.00 (closeness: 0.88)
+
+Gym Hero - Score: 2.93
+Because: Mood matches: intense; Energy 0.93 compared with target 1.00 (closeness: 0.93)
+
+Running Wild - Score: 2.90
+Because: Mood matches: intense; Energy 0.90 compared with target 1.00 (closeness: 0.90)
+
+Sunrise City - Score: 0.82
+Because: Energy 0.82 compared with target 1.00 (closeness: 0.82)
+
+
+Profile 4: genre=classical, mood=chill, energy=0.28
+Top recommendations:
+
+Spacewalk Thoughts - Score: 3.00
+Because: Mood matches: chill; Energy 0.28 compared with target 0.28 (closeness: 1.00)
+
+Quiet Window - Score: 2.96
+Because: Mood matches: chill; Energy 0.32 compared with target 0.28 (closeness: 0.96)
+
+Distant Planets - Score: 2.96
+Because: Mood matches: chill; Energy 0.24 compared with target 0.28 (closeness: 0.96)
+
+Library Rain - Score: 2.93
+Because: Mood matches: chill; Energy 0.35 compared with target 0.28 (closeness: 0.93)
+
+Midnight Coding - Score: 2.86
+Because: Mood matches: chill; Energy 0.42 compared with target 0.28 (closeness: 0.86)
+
+
+Profile 5: genre=classical, mood=melancholic, energy=0.4
+Top recommendations:
+
+Focus Flow - Score: 1.00
+Because: Energy 0.40 compared with target 0.40 (closeness: 1.00)
+
+Paper Skies - Score: 0.99
+Because: Energy 0.39 compared with target 0.40 (closeness: 0.99)
+
+Midnight Coding - Score: 0.98
+Because: Energy 0.42 compared with target 0.40 (closeness: 0.98)
+
+Open Pages - Score: 0.98
+Because: Energy 0.38 compared with target 0.40 (closeness: 0.98)
+
+Coffee Shop Stories - Score: 0.97
+Because: Energy 0.37 compared with target 0.40 (closeness: 0.97)
+```
+
+The first profile produces an exact match. The two boundary-energy profiles
+still favor genre and mood matches, then use energy closeness to distinguish
+them. The fourth profile has no matching genre, so mood and energy determine
+its ranking. The fifth has neither a matching genre nor mood, so its
+recommendations depend entirely on energy.
+
+After the sensitivity change, the same five songs remained in the same order
+for every profile. Scores for non-exact energy matches decreased: for example,
+Quiet Window's score fell from 4.68 to 4.36 and Storm Runner's from 4.91 to
+4.82, while both remained first for their profiles. Exact-energy top matches
+retained their scores. See the [model card evaluation](model_card.md#7-evaluation)
+for the comparison across all five profiles.
+
+These examples do not establish whether real users would like the results.
+The sensitivity change is covered by automated tests, but other weight or
+additional feature comparisons have not yet been tested.
 
 ---
 
 ## Limitations and Risks
 
-Summarize some limitations of your recommender.
-
-Examples:
-
-- It only works on a tiny catalog
-- It does not understand lyrics or language
-- It might over favor one genre or mood
-
-You will go deeper on this in your model card.
+- The catalog has only 20 songs and does not include every genre or mood.
+- Genre and mood matches each outweigh the entire energy contribution.
+- Energy differences of 0.5 or more all receive the same zero closeness score,
+  so the model cannot distinguish between them on energy alone.
+- The score ignores acousticness, tempo, valence, danceability, lyrics, and
+  listening history. A user who dislikes acoustic music could still receive
+  acoustic recommendations.
+- Missing category matches can produce recommendations based only on energy,
+  without warning that no genre or mood matches exist.
+- The simulation has not been evaluated with real listeners, so its
+  usefulness and fairness are unknown.
 
 ---
 
 ## Reflection
 
-Read and complete `model_card.md`:
-
 [**Model Card**](model_card.md)
 
-Write 1 to 2 paragraphs here about what you learned:
+I found it interesting to use a user profile to build a basic recommendation
+system. I expected the algorithm to be more complicated, but I realized I
+had been overthinking the basic idea: preferences can be turned into scores
+that determine an ordering.
 
-- about how recommenders turn data into predictions
-- about where bias or unfairness could show up in systems like this
+I am concerned that genre and mood matches could produce acoustic
+recommendations even for someone who dislikes acoustic music. Because the
+system ignores acousticness, and because the small catalog does not represent
+every taste, the results may work better for some users than others.

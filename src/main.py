@@ -6,24 +6,29 @@ else:
     from recommender import load_songs, recommend_songs
 
 
-def main() -> None:
-    """Load songs and display recommendations for the sample profile."""
+def main(* args) -> None:
+    """Load songs and display recommendations for five sample profiles."""
     songs = load_songs("data/songs.csv") 
     print(f"Loaded {len(songs)} songs.")
 
-    # Starter example profile
-    user_prefs = {"genre": "pop", "mood": "happy", "energy": 0.8}
+    user_profiles = [
+        {"genre": "pop", "mood": "happy", "energy": 0.82},
+        {"genre": "lofi", "mood": "chill", "energy": 0.0},
+        {"genre": "rock", "mood": "intense", "energy": 1.0},
+        {"genre": "classical", "mood": "chill", "energy": 0.28},
+        {"genre": "classical", "mood": "melancholic", "energy": 0.4},
+    ]
 
-    recommendations = recommend_songs(user_prefs, songs, k=5)
-
-    print("\nTop recommendations:\n")
-    for rec in recommendations:
-        # You decide the structure of each returned item.
-        # A common pattern is: (song, score, explanation)
-        song, score, explanation = rec
-        print(f"{song['title']} - Score: {score:.2f}")
-        print(f"Because: {explanation}")
-        print()
+    for index, user_prefs in enumerate(user_profiles, start=1):
+        print(
+            f"\nProfile {index}: genre={user_prefs['genre']}, "
+            f"mood={user_prefs['mood']}, energy={user_prefs['energy']}"
+        )
+        print("Top recommendations:\n")
+        for song, score, explanation in recommend_songs(user_prefs, songs, k=5):
+            print(f"{song['title']} - Score: {score:.2f}")
+            print(f"Because: {explanation}")
+            print()
 
 
 if __name__ == "__main__":

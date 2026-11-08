@@ -97,7 +97,7 @@ def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
         score += 2
         reasons.append(f"Mood matches: {song['mood']}")
 
-    energy_closeness = 1 - abs(song_energy - user_energy)
+    energy_closeness = max(0.0, 1 - 2 * abs(song_energy - user_energy))
     score += energy_closeness
     reasons.append(
         f"Energy {song_energy:.2f} compared with target {user_energy:.2f} "
